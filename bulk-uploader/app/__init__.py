@@ -1,10 +1,14 @@
 import logging
 import logging.config
 
+import json
+
+from flask import Flask
 from celery import Celery
 
 from config import Config
 from .image_downloader import ImageDownloader
+from .filestore import FileStore
 
 # from celery.app.log import TaskFormatter
 
@@ -15,7 +19,22 @@ from .image_downloader import ImageDownloader
 # logger.addHandler(sh)
 
 
-img_download = ImageDownloader()
+img_downloader = ImageDownloader()
+filestore = FileStore()
 
 celery = Celery(__name__)
-celery.conf.update(Config.CELERY)
+
+
+def create_app(config_name):
+    app = Flask(__name__)
+    # app.config.from_object(config[config_name])
+    celery.conf.update(Config.CELERY)
+    celery.autodiscover_tasks([
+            'app.tasks',
+        ],
+        force=True
+    )
+
+    # app.run(port=5000, debug=True)
+
+    return app
